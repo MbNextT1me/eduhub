@@ -37,3 +37,12 @@ CREATE TABLE IF NOT EXISTS task_files (
     FOREIGN KEY (task_id) REFERENCES tasks(id),
     FOREIGN KEY (file_id) REFERENCES files(id)
 );
+
+CREATE TABLE IF NOT EXISTS clusters (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    host_name VARCHAR(255) NOT NULL,
+    port VARCHAR(10) NOT NULL,
+    host_user_name VARCHAR(255) NOT NULL,
+    host_user_password VARCHAR(255) NOT NULL
+);

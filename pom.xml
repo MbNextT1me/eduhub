@@ -65,7 +65,11 @@
 			<artifactId>jaxb-api</artifactId>
 			<version>2.3.1</version> <!-- или другая актуальная версия -->
 		</dependency>
-
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.55</version>
+		</dependency>
 	</dependencies>
 
 	<build>
