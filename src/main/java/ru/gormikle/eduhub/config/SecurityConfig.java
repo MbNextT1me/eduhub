@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,8 +15,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import ru.gormikle.eduhub.service.UserService;
 
 import java.util.List;
 
@@ -26,19 +25,11 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-    private final UserService userService;
+    private final JwtRequestFilterConfig jwtRequestFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider daoAuthenticationProvider(){
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-        daoAuthenticationProvider.setUserDetailsService(userService);
-        return daoAuthenticationProvider;
     }
 
     @Bean
@@ -58,20 +49,21 @@ public class SecurityConfig {
                     corsConfiguration.setAllowCredentials(true);
                     return corsConfiguration;
                 }))
+                // Здесь как раз таки по контексту и смотрим
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/api/admin").hasRole("ADMIN")
-                        .requestMatchers("/api/info").authenticated()
-                        .requestMatchers("/api/secured").authenticated()
+                        .requestMatchers("/api/registration").hasRole("ADMIN")
                         .requestMatchers("/api/auth").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
-                .httpBasic(Customizer.withDefaults());
-                //.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-
+                .httpBasic(Customizer.withDefaults())
+                //Перекладываем пользователя в контекст
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

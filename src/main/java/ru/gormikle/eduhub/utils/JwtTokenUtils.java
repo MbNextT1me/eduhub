@@ -35,18 +35,18 @@ public class JwtTokenUtils {
     }
 
     // Не забываем, что userName - это email
-    public  String getUserName(String token) {
+    public  String getUsername(String token) {
         return getAllClaimsFromToken(token).getSubject();
     }
 
-    public String Role(String token) {
+    public String getRole(String token) {
         return getAllClaimsFromToken(token).get("role", String.class);
     }
 
     private Claims getAllClaimsFromToken(String token){
         return  Jwts.parser()
                 .setSigningKey(secret)
-                .parseClaimsJwt(token)
+                .parseClaimsJws(token)
                 .getBody();
     }
 }

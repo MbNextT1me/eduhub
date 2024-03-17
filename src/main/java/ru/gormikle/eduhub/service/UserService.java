@@ -5,8 +5,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.gormikle.eduhub.dto.RegistrationUser;
 import ru.gormikle.eduhub.entity.User;
 import ru.gormikle.eduhub.repository.UserRepository;
 
@@ -17,6 +19,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Optional<User> findByEmail(String email){
         return userRepository.findByEmail(email);
@@ -33,5 +36,15 @@ public class UserService implements UserDetailsService {
                 user.getPassword(),
                 Collections.singletonList(authority)
         );
+    }
+
+    public User createNewUser(RegistrationUser registrationUser){
+        User user = new User();
+        user.setEmail(registrationUser.getEmail());
+        user.setName(registrationUser.getName());
+        user.setSurname(registrationUser.getSurname());
+        user.setPassword(passwordEncoder.encode(registrationUser.getPassword()));
+        user.setRole(registrationUser.getRole());
+        return userRepository.save(user);
     }
 }

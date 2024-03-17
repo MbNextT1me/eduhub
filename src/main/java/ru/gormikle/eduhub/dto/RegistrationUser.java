@@ -1,6 +1,7 @@
 package ru.gormikle.eduhub.dto;
 
 import lombok.Data;
+import ru.gormikle.eduhub.entity.User;
 
 @Data
 public class RegistrationUser {
@@ -14,4 +15,6 @@ public class RegistrationUser {
     private String password;
 
     private String confirmPassword;
+
+    private User.Role role;
 }
