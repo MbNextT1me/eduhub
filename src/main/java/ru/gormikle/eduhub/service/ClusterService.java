@@ -45,6 +45,7 @@ public class ClusterService {
         clusterRepository.deleteById(id);
     }
 
+    //Сейчас лог файлы перезаписываются, так делать не надо.
     public String executeRemoteCode(UUID fileId, UUID taskId, UUID clusterId) {
         try {
             File file = fileRepository.findById(fileId)
@@ -72,7 +73,8 @@ public class ClusterService {
 
             // Выполнение компиляции
             ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
-            execChannel.setCommand("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')));
+            execChannel.setCommand("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')) );
+            System.out.println("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')));
             execChannel.connect();
             execChannel.disconnect(); // Отключаем execChannel после компиляции
 
@@ -92,7 +94,7 @@ public class ClusterService {
 
 
             // Запись результата в файл с категорией CLUSTER_LOG
-            String logFileName = "compilation_log.txt";
+            String logFileName = "compilation_log"+fileId+".txt";
             File logFile = new File();
             logFile.setName(logFileName);
             logFile.setCategory(File.Category.valueOf("CLUSTER_LOG"));

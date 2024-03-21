@@ -43,4 +43,32 @@ public class FileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResource.getFilename() + "\"")
                 .body(fileResource);
     }
+
+    @PutMapping("/files/{fileId}")
+    public ResponseEntity<?> updateFile(@PathVariable UUID fileId,
+                                        @RequestParam("file") MultipartFile file,
+                                        @RequestParam("category") File.Category category) {
+        try {
+            fileService.updateFile(fileId, file, category);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @DeleteMapping("/files/{fileId}")
+    public ResponseEntity<?> deleteFile(@PathVariable UUID fileId) {
+        try {
+            fileService.deleteFile(fileId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }

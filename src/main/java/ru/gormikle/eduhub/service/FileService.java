@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -63,5 +64,37 @@ public class FileService {
         } catch (MalformedURLException e) {
             throw new RuntimeException("File not found or cannot be read", e);
         }
+    }
+    public void updateFile(UUID fileId, MultipartFile file, File.Category category) throws IOException {
+        File existingFile = fileRepository.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("File not found"));
+
+        existingFile.setCategory(category);
+
+        if (file != null && !file.isEmpty()) {
+            // Если предоставлен новый файл, удаляем старый файл и сохраняем новый файл
+            String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+            if (fileName.contains("..")) {
+                throw new IllegalArgumentException("File name contains invalid path sequence");
+            }
+
+            // Удаляем существующий файл из хранилища
+            Path existingFilePath = Paths.get(fileStoragePath + existingFile.getName());
+            Files.deleteIfExists(existingFilePath);
+
+            // Сохраняем новый файл в хранилище
+            Path filePath = Paths.get(fileStoragePath + fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            existingFile.setName(fileName);
+        }
+
+        // Сохраняем обновленный файл в репозитории
+        fileRepository.save(existingFile);
+    }
+    public void deleteFile(UUID fileId) {
+        File existingFile = fileRepository.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("File not found"));
+        fileRepository.delete(existingFile);
     }
 }
