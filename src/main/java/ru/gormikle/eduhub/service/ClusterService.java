@@ -73,9 +73,17 @@ public class ClusterService {
 
             // Выполнение компиляции
             ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
-            execChannel.setCommand("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')) );
-            System.out.println("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')));
+            execChannel.setCommand("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')));
             execChannel.connect();
+            while (!execChannel.isClosed()) {
+                Thread.sleep(1000); // Подождать 1 секунду перед проверкой снова
+            }
+
+            // Проверяем статус завершения
+            if (execChannel.getExitStatus() != 0) {
+                // Обработка ошибок при выполнении команды
+            }
+
             execChannel.disconnect(); // Отключаем execChannel после компиляции
 
             // Выполнение скомпилированного файла
@@ -112,6 +120,8 @@ public class ClusterService {
         } catch (JSchException | IOException e) {
             return "Error: " + e.getMessage();
         } catch (SftpException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
