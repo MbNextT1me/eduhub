@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ru.gormikle.eduhub.entity.File;
+import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.repository.FileRepository;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class FileService {
     @Value("${file.path}")
     private String fileStoragePath;
 
-    public void uploadFile(MultipartFile file, File.Category category) throws IOException {
+    public void uploadFile(MultipartFile file, FileCategory category) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File is empty");
         }
@@ -47,8 +48,8 @@ public class FileService {
         fileRepository.save(fileEntity);
     }
 
-    public List<File> getFilesByCategory(File.Category category) {
-        return fileRepository.findFilesByCategory(category);
+    public List<File> getFilesByCategory(FileCategory category) {
+        return fileRepository.findAllByCategory(category);
     }
 
     public Resource downloadFile(UUID fileId) {
@@ -65,7 +66,7 @@ public class FileService {
             throw new RuntimeException("File not found or cannot be read", e);
         }
     }
-    public void updateFile(UUID fileId, MultipartFile file, File.Category category) throws IOException {
+    public void updateFile(UUID fileId, MultipartFile file, FileCategory category) throws IOException {
         File existingFile = fileRepository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("File not found"));
 

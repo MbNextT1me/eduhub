@@ -5,6 +5,10 @@ server:
 jwt:
   secret: test
   lifetime: 30m
+
+spring.main:
+  banner-mode: 'off'
+
 spring:
   application:
     name: eduhub
@@ -14,6 +18,29 @@ spring:
     password: admin
   jpa:
     show-sql: true
-#Возможно это должно выглядеть так
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: eduhub
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/
+    baseline-on-migrate: true
+    out-of-order: false
+    schemas: eduhub
+    ignore-migration-patterns:
+logging.level:
+  root: INFO
+#logging:
+#  pattern:
+#    console: "%d %-5level %logger : %msg%n"
+#    file: "%d %-5level [%thread] %logger : %msg%n"
+#  level:
+#    org.springframework.web: DEBUG
+#    guru.springframework.controllers: DEBUG
+#    org.hibernate: DEBUG
+#  file:
+#    name: src/main/resources/logs/dev_app.log
 file:
-  path: src/main/java/ru/gormikle/eduhub/cluster/files/
+  path: classpath:cluster/files/

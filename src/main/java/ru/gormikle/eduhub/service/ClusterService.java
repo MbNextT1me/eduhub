@@ -2,11 +2,12 @@ package ru.gormikle.eduhub.service;
 
 import com.jcraft.jsch.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.gormikle.eduhub.entity.Cluster;
 import ru.gormikle.eduhub.entity.File;
+import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.entity.Task;
 import ru.gormikle.eduhub.repository.ClusterRepository;
 import ru.gormikle.eduhub.repository.FileRepository;
@@ -16,9 +17,11 @@ import java.io.*;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClusterService {
     @Value("${file.path}")
     private String fileStoragePath;
@@ -56,7 +59,7 @@ public class ClusterService {
                     .orElseThrow(() -> new IllegalArgumentException("Cluster not found with id: " + clusterId));
 
             JSch js = new JSch();
-            System.out.println(cluster.getHostUserPassword());
+            log.debug(cluster.getHostUserPassword());
             Session session = js.getSession(cluster.getHostUserName(), cluster.getHostName(), Integer.parseInt(cluster.getPort()));
             session.setPassword(cluster.getHostUserPassword());
             Properties config = new Properties();
@@ -76,7 +79,7 @@ public class ClusterService {
             execChannel.setCommand("/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.')));
             execChannel.connect();
             while (!execChannel.isClosed()) {
-                Thread.sleep(1000); // Подождать 1 секунду перед проверкой снова
+                TimeUnit.SECONDS.sleep(1);
             }
 
             // Проверяем статус завершения
@@ -105,7 +108,7 @@ public class ClusterService {
             String logFileName = "compilation_log"+fileId+".txt";
             File logFile = new File();
             logFile.setName(logFileName);
-            logFile.setCategory(File.Category.valueOf("CLUSTER_LOG"));
+            logFile.setCategory(FileCategory.valueOf("CLUSTER_LOG"));
             File savedlogfile = fileRepository.save(logFile);
             taskService.addFileToTask(taskId,savedlogfile.getId());
 
@@ -119,9 +122,7 @@ public class ClusterService {
             return "Success. Execution log saved in file: " + logFileName;
         } catch (JSchException | IOException e) {
             return "Error: " + e.getMessage();
-        } catch (SftpException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (SftpException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

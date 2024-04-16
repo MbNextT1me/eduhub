@@ -17,16 +17,7 @@ public class File {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "category", nullable = false, length = 20)
-    private File.Category category;
-
-    public enum Category {
-        //Логи, что получаем с кластера
-        CLUSTER_LOG,
-        //Файлы, что студенты отправляют для автоматического запуска на удаленном сервере
-        CLUSTER_SEND,
-        //Тестовые файлы, что прикладывает препод, чтобы проверить решения студентов
-        CLUSTER_TEST
-    }
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "category", nullable = false)
+    private FileCategory category;
 }

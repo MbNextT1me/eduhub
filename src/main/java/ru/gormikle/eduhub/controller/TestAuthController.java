@@ -1,6 +1,7 @@
 package ru.gormikle.eduhub.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.gormikle.eduhub.dto.JwtRequest;
@@ -10,11 +11,13 @@ import ru.gormikle.eduhub.service.AuthService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@Slf4j
 public class TestAuthController {
     private final AuthService authService;
 
     @PostMapping("/auth")
     public ResponseEntity<?> createAuthToken(@RequestBody JwtRequest authRequest){
+        log.debug(String.valueOf(authRequest));
         return authService.createAuthToken(authRequest);
     }
 
