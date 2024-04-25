@@ -6,6 +6,5 @@ import ru.gormikle.eduhub.entity.Cluster;
 
 import java.util.UUID;
 
-@Repository
 public interface ClusterRepository extends CrudRepository<Cluster, UUID> {
 }
