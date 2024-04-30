@@ -54,7 +54,7 @@ public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String
     }
 
     public ClusterDto saveCluster(ClusterDto clusterDto) {
-        clusterDto.setHostUserPassword(passwordEncoder.encode(clusterDto.getHostUserPassword()));
+        //clusterDto.setHostUserPassword(passwordEncoder.encode(clusterDto.getHostUserPassword()));
         return create(clusterDto);
     }
 
