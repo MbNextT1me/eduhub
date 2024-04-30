@@ -15,13 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import ru.gormikle.eduhub.entity.File;
+import ru.gormikle.eduhub.dto.FileDto;
 import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.service.FileService;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,14 +42,14 @@ public class FileController {
     }
 
     @GetMapping("/files/{categoryName}")
-    public ResponseEntity<List<File>> getFilesByCategory(@PathVariable FileCategory categoryName) {
+    public ResponseEntity<List<FileDto>> getFilesByCategory(@PathVariable FileCategory categoryName) {
         log.debug(categoryName.toString());
-        List<File> files = fileService.getFilesByCategory(categoryName);
+        List<FileDto> files = fileService.getFilesByCategory(categoryName);
         return ResponseEntity.ok(files);
     }
 
     @GetMapping("/files/{fileId}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable UUID fileId) throws IOException {
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileId) throws IOException {
         Resource fileResource = fileService.downloadFile(fileId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResource.getFilename() + "\"")
@@ -58,7 +57,7 @@ public class FileController {
     }
 
     @PutMapping("/files/{fileId}")
-    public ResponseEntity<?> updateFile(@PathVariable UUID fileId,
+    public ResponseEntity<?> updateFile(@PathVariable String fileId,
                                         @RequestParam("file") MultipartFile file,
                                         @RequestParam("category") FileCategory category) {
         try {
@@ -74,7 +73,7 @@ public class FileController {
     }
 
     @DeleteMapping("/files/{fileId}")
-    public ResponseEntity<?> deleteFile(@PathVariable UUID fileId) {
+    public ResponseEntity<?> deleteFile(@PathVariable String fileId) {
         try {
             fileService.deleteFile(fileId);
             return ResponseEntity.ok().build();

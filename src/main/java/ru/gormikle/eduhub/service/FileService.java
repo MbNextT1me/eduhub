@@ -1,15 +1,18 @@
 package ru.gormikle.eduhub.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import ru.gormikle.eduhub.dto.FileDto;
 import ru.gormikle.eduhub.entity.File;
 import ru.gormikle.eduhub.entity.FileCategory;
+import ru.gormikle.eduhub.mapper.FileMapper;
 import ru.gormikle.eduhub.repository.FileRepository;
+import ru.gormikle.eduhub.service.basic.BaseMappedService;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -19,15 +22,17 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
-public class FileService {
-    private final FileRepository fileRepository;
+@Transactional
+public class FileService extends BaseMappedService<File,FileDto,String,FileRepository, FileMapper> {
 
     @Value("${file.path}")
     private String fileStoragePath;
+
+    public FileService(FileRepository repository, FileMapper mapper) {
+        super(repository,mapper);
+    }
 
     public void uploadFile(MultipartFile file, FileCategory category) throws IOException {
         if (file.isEmpty()) {
@@ -45,15 +50,15 @@ public class FileService {
         File fileEntity = new File();
         fileEntity.setName(fileName);
         fileEntity.setCategory(category);
-        fileRepository.save(fileEntity);
+        repository.save(fileEntity);
     }
 
-    public List<File> getFilesByCategory(FileCategory category) {
-        return fileRepository.findAllByCategory(category);
+    public List<FileDto> getFilesByCategory(FileCategory category) {
+        return repository.findAllByCategory(category);
     }
 
-    public Resource downloadFile(UUID fileId) {
-        File file = fileRepository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("File not found"));
+    public Resource downloadFile(String fileId) {
+        File file = repository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("File not found"));
         Path filePath = Paths.get(fileStoragePath + file.getName());
         try {
             Resource resource = new UrlResource(filePath.toUri());
@@ -66,8 +71,8 @@ public class FileService {
             throw new RuntimeException("File not found or cannot be read", e);
         }
     }
-    public void updateFile(UUID fileId, MultipartFile file, FileCategory category) throws IOException {
-        File existingFile = fileRepository.findById(fileId)
+    public void updateFile(String fileId, MultipartFile file, FileCategory category) throws IOException {
+        File existingFile = repository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("File not found"));
 
         existingFile.setCategory(category);
@@ -91,11 +96,11 @@ public class FileService {
         }
 
         // Сохраняем обновленный файл в репозитории
-        fileRepository.save(existingFile);
+        repository.save(existingFile);
     }
-    public void deleteFile(UUID fileId) {
-        File existingFile = fileRepository.findById(fileId)
+    public void deleteFile(String fileId) {
+        File existingFile = repository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("File not found"));
-        fileRepository.delete(existingFile);
+        repository.delete(existingFile);
     }
 }

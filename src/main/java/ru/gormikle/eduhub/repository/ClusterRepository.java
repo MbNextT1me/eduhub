@@ -1,10 +1,8 @@
 package ru.gormikle.eduhub.repository;
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import ru.gormikle.eduhub.entity.Cluster;
 
-import java.util.UUID;
 
-public interface ClusterRepository extends CrudRepository<Cluster, UUID> {
+public interface ClusterRepository extends JpaRepository<Cluster,String> {
 }

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,6 +25,9 @@ import java.util.Collections;
 public class JwtRequestFilterConfig extends OncePerRequestFilter {
     private final JwtTokenUtils jwtTokenUtils;
 
+    @Value("${jwt.prefix}")
+    private String tokenPrefix;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
@@ -31,8 +35,8 @@ public class JwtRequestFilterConfig extends OncePerRequestFilter {
         String jwt = null;
 
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")){
-            jwt = authHeader.substring(7);
+        if (authHeader != null && authHeader.startsWith(tokenPrefix)){
+            jwt = authHeader.substring(tokenPrefix.length());
             try {
                 username = jwtTokenUtils.getUsername(jwt);
             } catch (ExpiredJwtException e){

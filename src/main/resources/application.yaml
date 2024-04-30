@@ -3,8 +3,9 @@ server:
   servlet:
     context-path: /eduhub
 jwt:
+  prefix: "Bearer "
   secret: test
-  lifetime: 30m
+  lifetime: 300m
 
 spring.main:
   banner-mode: 'off'
@@ -43,4 +44,4 @@ logging.level:
 #  file:
 #    name: src/main/resources/logs/dev_app.log
 file:
-  path: classpath:cluster/files/
+  path: src/main/resources/cluster/files/

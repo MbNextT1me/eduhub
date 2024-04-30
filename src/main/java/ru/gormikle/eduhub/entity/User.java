@@ -1,38 +1,35 @@
 package ru.gormikle.eduhub.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
+import ru.gormikle.eduhub.entity.basic.BaseEntity;
 
 @Entity
-@Data
 @Table(name="users")
-public class User {
+@Getter
+@Setter
+@SuperBuilder
+@NoArgsConstructor
+@FieldNameConstants
+public class User extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false, unique = true)
-    private UUID id;
-
-    @Column(name = "name", nullable = false, length = 255)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "surname", nullable = false, length = 255)
+    @Column(name = "surname", nullable = false)
     private String surname;
 
-    @Column(name = "email", nullable = false, length = 255, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false, length = 255)
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
+    @Enumerated(EnumType.ORDINAL)
+    @Column(name = "role", nullable = false)
     private Role role;
-
-    public enum Role {
-        ROLE_ADMIN,
-        ROLE_STUDENT,
-        ROLE_TEACHER
-    }
 }

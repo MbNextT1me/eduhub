@@ -1,46 +1,51 @@
 package ru.gormikle.eduhub.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.gormikle.eduhub.dto.FileDto;
+import ru.gormikle.eduhub.dto.TaskDto;
 import ru.gormikle.eduhub.entity.File;
+import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.entity.Task;
+import ru.gormikle.eduhub.mapper.TaskMapper;
 import ru.gormikle.eduhub.repository.FileRepository;
 import ru.gormikle.eduhub.repository.TaskRepository;
+import ru.gormikle.eduhub.service.basic.BaseMappedService;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-public class TaskService {
-    private final TaskRepository taskRepository;
+@Transactional
+public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepository, TaskMapper> {
     private final FileRepository fileRepository;
 
-    public List<Task> getAllTasks() {
-        return (List<Task>) taskRepository.findAll();
+    public TaskService(TaskRepository repository, TaskMapper mapper, FileRepository fileRepository) {
+        super(repository,mapper);
+        this.fileRepository = fileRepository;
     }
 
-    public Task getTaskById(UUID id) {
-        return taskRepository.findById(id).orElse(null);
+    public List<TaskDto> getAllTasks() {
+        return getAllAsDto();
     }
 
-    public Task createTask(Task task) {
-        return taskRepository.save(task);
+    public TaskDto getTaskById(String id) {
+        Task task = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+        return toDto(task);
     }
 
-    public Task updateTask(UUID id, Task task) {
-        if (taskRepository.existsById(id)) {
-            task.setId(id);
-            return taskRepository.save(task);
-        } else {
-            return null;
-        }
+    public TaskDto createTask(TaskDto taskDto) {
+        return create(taskDto);
     }
 
-    public void addFileToTask(UUID taskId, UUID fileId) {
-        Task task = taskRepository.findById(taskId).orElse(null);
+    public TaskDto updateTask(String id, TaskDto taskDto) {
+        return update(taskDto);
+    }
+
+    public void addFileToTask(String taskId, String fileId) {
+        Task task = repository.findById(taskId).orElse(null);
         if (task != null) {
             File file = fileRepository.findById(fileId).orElse(null);
             if (file != null) {
@@ -48,17 +53,17 @@ public class TaskService {
                 if (!files.contains(file)) {
                     files.add(file);
                     task.setFiles(files);
-                    taskRepository.save(task);
+                    repository.save(task);
                 }
             }
         }
     }
 
-    public List<File> getFilesByCategory(UUID taskId, String category) {
-        Task task = taskRepository.findById(taskId).orElse(null);
-        if (task != null) {
-            return task.getFiles().stream()
-                    .filter(file -> file.getCategory().toString().equals(category))
+    public List<FileDto> getFilesByCategory(String taskId, String category) {
+        TaskDto taskDto = getTaskById(taskId);
+        if (taskDto != null) {
+            return taskDto.getFiles().stream()
+                    .flatMap(fileDto -> fileRepository.findAllByCategory(FileCategory.valueOf(category)).stream())
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

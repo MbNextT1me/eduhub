@@ -1,7 +1,7 @@
 package ru.gormikle.eduhub.dto;
 
 import lombok.Data;
-import ru.gormikle.eduhub.entity.User;
+import ru.gormikle.eduhub.entity.Role;
 
 @Data
 public class RegistrationUser {
@@ -16,5 +16,5 @@ public class RegistrationUser {
 
     private String confirmPassword;
 
-    private User.Role role;
+    private Role role;
 }

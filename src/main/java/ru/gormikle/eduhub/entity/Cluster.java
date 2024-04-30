@@ -1,18 +1,21 @@
 package ru.gormikle.eduhub.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-
-import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
+import ru.gormikle.eduhub.entity.basic.BaseEntity;
 
 @Entity
 @Table(name="clusters")
-@Data
-public class Cluster {
-    @Id
-    @GeneratedValue
-    @Column(name = "id", nullable = false, unique = true)
-    private UUID id;
+@Getter
+@Setter
+@SuperBuilder
+@NoArgsConstructor
+@FieldNameConstants
+public class Cluster extends BaseEntity {
 
     @Column(name = "name", nullable = false)
     private String name;
