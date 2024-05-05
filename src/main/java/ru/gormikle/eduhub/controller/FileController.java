@@ -30,17 +30,6 @@ public class FileController {
 
     private final FileService fileService;
 
-    @PostMapping("/files")
-    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
-                                        @RequestParam("category") FileCategory category) {
-        try {
-            fileService.uploadFile(file, category);
-            return ResponseEntity.ok().build();
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
-        }
-    }
-
     @GetMapping("/files/{categoryName}")
     public ResponseEntity<List<FileDto>> getFilesByCategory(@PathVariable FileCategory categoryName) {
         log.debug(categoryName.toString());
@@ -54,6 +43,17 @@ public class FileController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResource.getFilename() + "\"")
                 .body(fileResource);
+    }
+
+    @PostMapping("/files")
+    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("category") FileCategory category) {
+        try {
+            fileService.uploadFile(file, category);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
+        }
     }
 
     @PutMapping("/files/{fileId}")

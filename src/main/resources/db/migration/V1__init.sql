@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 insert into users(id,name,surname, email,password,role)
 VALUES
-   (gen_random_uuid()::text,'Админ', 'Админов', 'admin@eduhub.com','$2a$12$jXIFqtfo3xQ5n7HhBNdIJOlG6GWdQggqb2HdWDDzg64/rQMuzOaie', 1),
-   (gen_random_uuid()::text,'Миша', 'Горюнов', 'misha@eduhub.com', '$2a$12$jXIFqtfo3xQ5n7HhBNdIJOlG6GWdQggqb2HdWDDzg64/rQMuzOaie' , 2),
-   (gen_random_uuid()::text,'Мария', 'Александровна', 'maria@eduhub.com','$2a$12$jXIFqtfo3xQ5n7HhBNdIJOlG6GWdQggqb2HdWDDzg64/rQMuzOaie' , 3);
+   (gen_random_uuid()::text,'Админ', 'Админов', 'admin@eduhub.com','$2a$12$jXIFqtfo3xQ5n7HhBNdIJOlG6GWdQggqb2HdWDDzg64/rQMuzOaie', 0),
+   (gen_random_uuid()::text,'Миша', 'Горюнов', 'misha@eduhub.com', '$2a$12$jXIFqtfo3xQ5n7HhBNdIJOlG6GWdQggqb2HdWDDzg64/rQMuzOaie' , 1),
+   (gen_random_uuid()::text,'Мария', 'Александровна', 'maria@eduhub.com','$2a$12$jXIFqtfo3xQ5n7HhBNdIJOlG6GWdQggqb2HdWDDzg64/rQMuzOaie' , 2);
 
 
 CREATE TABLE IF NOT EXISTS files (
