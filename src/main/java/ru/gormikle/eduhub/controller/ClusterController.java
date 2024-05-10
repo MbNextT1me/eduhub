@@ -1,6 +1,7 @@
 package ru.gormikle.eduhub.controller;
 
 
+import com.jcraft.jsch.JSchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +9,7 @@ import ru.gormikle.eduhub.dto.ClusterDto;
 import ru.gormikle.eduhub.service.ClusterService;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api")
@@ -42,10 +44,11 @@ public class ClusterController {
     }
 
     @PostMapping("/clusters/remoteExecution")
-    public ResponseEntity<String> remoteExecution(@RequestParam("fileId") String fileId,
-                                                  @RequestParam("taskId") String taskId,
-                                                  @RequestParam("clusterId") String clusterId) {
-        String result = clusterService.executeRemoteCode(fileId, taskId, clusterId);
-        return ResponseEntity.ok(result);
+    public CompletableFuture<ResponseEntity<String>> remoteExecution(@RequestParam("fileId") String fileId,
+                                                                     @RequestParam("taskId") String taskId,
+                                                                     @RequestParam("clusterId") String clusterId){
+        return clusterService.executeRemoteCode(fileId, taskId, clusterId)
+                .thenApply(ResponseEntity::ok)
+                .exceptionally(e -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()));
     }
 }
