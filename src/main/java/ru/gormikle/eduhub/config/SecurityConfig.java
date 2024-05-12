@@ -49,7 +49,6 @@ public class SecurityConfig {
                     corsConfiguration.setAllowCredentials(true);
                     return corsConfiguration;
                 }))
-                // Здесь как раз таки по контексту и смотрим
                 .authorizeHttpRequests((requests) -> requests
                         .requestMatchers("/api/admin").hasRole("ADMIN")
                         .requestMatchers("/api/registration").hasRole("ADMIN")
@@ -62,7 +61,6 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
                 .httpBasic(Customizer.withDefaults())
-                //Перекладываем пользователя в контекст
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

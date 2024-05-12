@@ -13,6 +13,7 @@ import ru.gormikle.eduhub.entity.User;
 import ru.gormikle.eduhub.repository.UserRepository;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,6 +24,10 @@ public class UserService implements UserDetailsService {
 
     public Optional<User> findByEmail(String email){
         return userRepository.findByEmail(email);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     @Transactional
@@ -37,6 +42,12 @@ public class UserService implements UserDetailsService {
                 Collections.singletonList(authority)
         );
     }
+
+    @Transactional
+    public void deleteUserById(String userId) {
+        userRepository.deleteById(userId);
+    }
+
 
     public User createNewUser(RegistrationUser registrationUser){
         User user = new User();

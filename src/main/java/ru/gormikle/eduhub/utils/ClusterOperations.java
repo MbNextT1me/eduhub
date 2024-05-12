@@ -40,19 +40,49 @@ public class ClusterOperations {
         return session;
     }
 
-    public void sendFileToCluster(Session session, File file) throws JSchException, IOException, SftpException {
+    public void sendFileToCluster(Session session, File file, String taskId,String username) throws JSchException, IOException, SftpException {
         ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
         sftpChannel.connect();
+
+        String remoteRootDir = "./eduhub";
+        String taskDir = "./task_" + taskId;
+        String userDir = "./user_" + username;
+        try {
+            sftpChannel.cd(remoteRootDir);
+        } catch (SftpException e) {
+            sftpChannel.mkdir(remoteRootDir);
+            sftpChannel.cd(remoteRootDir);
+        }
+        try {
+            sftpChannel.cd(taskDir);
+        } catch (SftpException e) {
+            sftpChannel.mkdir(taskDir);
+            sftpChannel.cd(taskDir);
+        }
+
+        try {
+            sftpChannel.cd(userDir);
+        } catch (SftpException e) {
+            sftpChannel.mkdir(userDir);
+            sftpChannel.cd(userDir);
+        }
+
         FileInputStream fileInputStream = new FileInputStream(fileStoragePath + file.getName());
+
         sftpChannel.put(fileInputStream, file.getName());
+
         fileInputStream.close();
         sftpChannel.disconnect();
     }
 
-    public void compileAndExecuteFile(Session session, File file, Task task) throws JSchException, IOException {
+
+
+    public void compileAndExecuteFile(Session session, File file, Task task, String username) throws JSchException, IOException {
+        String userDir = "./eduhub/task_" + task.getId() + "/user_" + username +"/";
+
         ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
-        String compileCommand = "/usr/local/cuda/bin/nvcc " + file.getName() + " -o " + file.getName().substring(0, file.getName().lastIndexOf('.'));
-        String executeCommand = "./" + file.getName().substring(0, file.getName().lastIndexOf('.'));
+        String compileCommand = "/usr/local/cuda/bin/nvcc " + userDir + file.getName() + " -o " + userDir + file.getName().substring(0, file.getName().lastIndexOf('.'));
+        String executeCommand = userDir + file.getName().substring(0, file.getName().lastIndexOf('.'));
 
         execChannel.setCommand(compileCommand + " && " + executeCommand);
         execChannel.connect();
@@ -77,8 +107,8 @@ public class ClusterOperations {
         int exitStatus = execChannel.getExitStatus();
         execChannel.disconnect();
 
-        String logFileName = "compilation_log" + UUID.randomUUID().toString() + ".txt";
-        //String logFileName = "compilation_log" + file.getId() + ".txt";
+        String logFileName = "compilation_log_" + file.getName().substring(0, file.getName().lastIndexOf('.')) + ".txt";
+
         File logFile = new File();
         logFile.setName(logFileName);
         logFile.setCategory(FileCategory.valueOf("CLUSTER_LOG"));

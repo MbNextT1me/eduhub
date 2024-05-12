@@ -1,7 +1,9 @@
 package ru.gormikle.eduhub.service;
 
 import com.jcraft.jsch.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import ru.gormikle.eduhub.repository.FileRepository;
 import ru.gormikle.eduhub.repository.TaskRepository;
 import ru.gormikle.eduhub.service.basic.BaseMappedService;
 import ru.gormikle.eduhub.utils.ClusterOperations;
+import ru.gormikle.eduhub.utils.JwtTokenUtils;
 
 import java.io.*;
 import java.util.List;
@@ -24,13 +27,17 @@ import java.util.concurrent.CompletableFuture;
 @Transactional
 @Slf4j
 public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String,ClusterRepository, ClusterMapper> {
-    public ClusterService(ClusterRepository repository, ClusterMapper mapper, FileRepository fileRepository, TaskRepository taskRepository, ClusterOperations clusterOperations){
+    @Value("${jwt.prefix}")
+    private String tokenPrefix;
+
+    public ClusterService(ClusterRepository repository, ClusterMapper mapper, JwtTokenUtils jwtTokenUtils, FileRepository fileRepository, TaskRepository taskRepository, ClusterOperations clusterOperations){
         super(repository,mapper);
+        this.jwtTokenUtils = jwtTokenUtils;
         this.fileRepository = fileRepository;
         this.taskRepository = taskRepository;
         this.clusterOperations = clusterOperations;
     }
-
+    private final JwtTokenUtils jwtTokenUtils;
     private final ClusterOperations clusterOperations;
     private final FileRepository fileRepository;
     private final TaskRepository taskRepository;
@@ -53,18 +60,21 @@ public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String
     }
 
     @Async
-    public CompletableFuture<String> executeRemoteCode(String fileId, String taskId, String clusterId) {
+    public CompletableFuture<String> executeRemoteCode(String fileId, String taskId, HttpServletRequest request) {
         try {
             File file = fileRepository.findById(fileId)
                     .orElseThrow(() -> new IllegalArgumentException("File not found with id: " + fileId));
             Task task = taskRepository.findById(taskId)
                     .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
-            Cluster cluster = repository.findById(clusterId)
-                    .orElseThrow(() -> new IllegalArgumentException("Cluster not found with id: " + clusterId));
+            Cluster cluster = repository.findAll().get(0);
+
+            String authHeader = request.getHeader("Authorization");
+            String token = authHeader.replace(tokenPrefix, "");
+            String username = jwtTokenUtils.getUsername(token);
 
             Session session = clusterOperations.connectToCluster(cluster);
-            clusterOperations.sendFileToCluster(session, file);
-            clusterOperations.compileAndExecuteFile(session, file, task);
+            clusterOperations.sendFileToCluster(session, file, taskId, username);
+            clusterOperations.compileAndExecuteFile(session, file, task, username);
             session.disconnect();
             return CompletableFuture.completedFuture("Success. Execution log saved.");
         } catch (JSchException e) {

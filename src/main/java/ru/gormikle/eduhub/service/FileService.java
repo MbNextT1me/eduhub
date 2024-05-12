@@ -3,6 +3,7 @@ package ru.gormikle.eduhub.service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -22,6 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -50,11 +52,13 @@ public class FileService extends BaseMappedService<File,FileDto,String,FileRepos
         File fileEntity = new File();
         fileEntity.setName(fileName);
         fileEntity.setCategory(category);
+        fileEntity.setCreatedBy(SecurityContextHolder.getContext().getAuthentication().getName());
         repository.save(fileEntity);
     }
 
-    public List<FileDto> getFilesByCategory(FileCategory category) {
-        return repository.findAllByCategory(category);
+    public Optional<FileDto> getFilesByCategory(FileCategory category) {
+
+        return repository.findAllDtoByCategory(category);
     }
 
     public Resource downloadFile(String fileId) {

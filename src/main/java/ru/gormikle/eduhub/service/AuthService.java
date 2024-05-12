@@ -8,6 +8,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.gormikle.eduhub.dto.JwtRequest;
 import ru.gormikle.eduhub.dto.JwtResponse;
@@ -16,6 +17,9 @@ import ru.gormikle.eduhub.dto.UserDto;
 import ru.gormikle.eduhub.entity.User;
 import ru.gormikle.eduhub.exception.AppError;
 import ru.gormikle.eduhub.utils.JwtTokenUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,20 @@ public class AuthService {
 
         String token = jwtTokenUtils.generateToken(userDetails);
         return ResponseEntity.ok(new JwtResponse(token));
+    }
+
+    @Transactional
+    public void deleteUserById(String userId) {
+        userService.deleteUserById(userId);
+    }
+
+    public List<UserDto> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        List<UserDto> userDtos = new ArrayList<>();
+        for (User user : users) {
+            userDtos.add(new UserDto(user.getId(), user.getEmail(), user.getSurname(), user.getName(), user.getRole()));
+        }
+        return userDtos;
     }
 
     public ResponseEntity<?> createNewUser(@RequestBody RegistrationUser registrationUser){

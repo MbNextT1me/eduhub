@@ -46,7 +46,6 @@ public class JwtRequestFilterConfig extends OncePerRequestFilter {
             }
         }
 
-        // Может быть проблема, что допустим блокнули пользователя, а у него токен еще живет, если время жизни токена неделя например
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                     username,

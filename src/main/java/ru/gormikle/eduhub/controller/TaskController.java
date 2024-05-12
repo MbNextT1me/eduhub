@@ -49,8 +49,8 @@ public class TaskController{
         }
     }
 
-    @PostMapping("/tasks/{taskId}/files/{fileId}")
-    public ResponseEntity<?> addFileToTask(@PathVariable String taskId, @PathVariable String fileId) {
+    @PostMapping("/tasks/files/")
+    public ResponseEntity<?> addFileToTask(@RequestParam("taskId") String taskId, @RequestParam("fileId") String fileId) {
         taskService.addFileToTask(taskId, fileId);
         return ResponseEntity.ok().build();
     }
@@ -59,5 +59,11 @@ public class TaskController{
     public ResponseEntity<List<FileDto>> getFilesByCategory(@PathVariable String taskId, @PathVariable String category) {
         List<FileDto> files = taskService.getFilesByCategory(taskId, category);
         return ResponseEntity.ok(files);
+    }
+
+    @DeleteMapping("/tasks/{id}")
+    public ResponseEntity<?> deleteTask(@PathVariable String id) {
+        taskService.deleteTask(id);
+        return ResponseEntity.ok().build();
     }
 }

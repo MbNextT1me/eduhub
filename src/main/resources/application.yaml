@@ -5,7 +5,7 @@ server:
 jwt:
   prefix: "Bearer "
   secret: test
-  lifetime: 300m
+  lifetime: 10h
 
 spring.main:
   banner-mode: 'off'

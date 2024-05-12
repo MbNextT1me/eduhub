@@ -59,11 +59,24 @@ public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepo
         }
     }
 
+    public void deleteTask(String id) {
+        Task task = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+
+        List<File> files = task.getFiles();
+
+        for (File file : files) {
+            fileRepository.deleteFileFromTask(id, file.getId());
+        }
+
+        repository.delete(task);
+    }
+
     public List<FileDto> getFilesByCategory(String taskId, String category) {
         TaskDto taskDto = getTaskById(taskId);
         if (taskDto != null) {
             return taskDto.getFiles().stream()
-                    .flatMap(fileDto -> fileRepository.findAllByCategory(FileCategory.valueOf(category)).stream())
+                    .flatMap(fileDto -> fileRepository.findAllDtoByCategory(FileCategory.valueOf(category)).stream())
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

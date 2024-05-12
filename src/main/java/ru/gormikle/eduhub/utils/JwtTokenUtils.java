@@ -34,7 +34,6 @@ public class JwtTokenUtils {
                 .compact();
     }
 
-    // Не забываем, что userName - это email
     public  String getUsername(String token) {
         return getAllClaimsFromToken(token).getSubject();
     }

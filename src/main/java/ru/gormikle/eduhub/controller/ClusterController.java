@@ -2,6 +2,7 @@ package ru.gormikle.eduhub.controller;
 
 
 import com.jcraft.jsch.JSchException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,9 +47,10 @@ public class ClusterController {
     @PostMapping("/clusters/remoteExecution")
     public CompletableFuture<ResponseEntity<String>> remoteExecution(@RequestParam("fileId") String fileId,
                                                                      @RequestParam("taskId") String taskId,
-                                                                     @RequestParam("clusterId") String clusterId){
-        return clusterService.executeRemoteCode(fileId, taskId, clusterId)
+                                                                     HttpServletRequest request){
+        return clusterService.executeRemoteCode(fileId, taskId, request)
                 .thenApply(ResponseEntity::ok)
                 .exceptionally(e -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()));
     }
+
 }

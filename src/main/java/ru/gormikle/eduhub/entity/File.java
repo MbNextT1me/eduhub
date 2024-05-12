@@ -23,4 +23,7 @@ public class File extends BaseEntity {
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "category", nullable = false)
     private FileCategory category;
+
+    @Column(name = "created_by", nullable = false)
+    private String createdBy;
 }

@@ -20,7 +20,7 @@ import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.service.FileService;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,10 +30,10 @@ public class FileController {
 
     private final FileService fileService;
 
-    @GetMapping("/files/{categoryName}")
-    public ResponseEntity<List<FileDto>> getFilesByCategory(@PathVariable FileCategory categoryName) {
+    @GetMapping("/files/category/{categoryName}")
+    public ResponseEntity<Optional<FileDto>> getFilesByCategory(@PathVariable FileCategory categoryName) {
         log.debug(categoryName.toString());
-        List<FileDto> files = fileService.getFilesByCategory(categoryName);
+        Optional<FileDto> files = fileService.getFilesByCategory(categoryName);
         return ResponseEntity.ok(files);
     }
 
