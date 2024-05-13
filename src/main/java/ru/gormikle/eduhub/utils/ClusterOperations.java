@@ -4,6 +4,7 @@ import com.jcraft.jsch.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import ru.gormikle.eduhub.dto.FileDto;
 import ru.gormikle.eduhub.entity.Cluster;
 import ru.gormikle.eduhub.entity.File;
 import ru.gormikle.eduhub.entity.FileCategory;
@@ -12,6 +13,10 @@ import ru.gormikle.eduhub.repository.FileRepository;
 import ru.gormikle.eduhub.service.TaskService;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -67,7 +72,7 @@ public class ClusterOperations {
             sftpChannel.cd(userDir);
         }
 
-        FileInputStream fileInputStream = new FileInputStream(fileStoragePath + file.getName());
+        FileInputStream fileInputStream = new FileInputStream(fileStoragePath +"user_" + username + "/" +file.getId() + '_' + file.getName());
 
         sftpChannel.put(fileInputStream, file.getName());
 
@@ -82,6 +87,15 @@ public class ClusterOperations {
 
         ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
         String compileCommand = "/usr/local/cuda/bin/nvcc " + userDir + file.getName() + " -o " + userDir + file.getName().substring(0, file.getName().lastIndexOf('.'));
+
+        List<File> testFiles = taskService.getFilesByCategory(task.getId(),"CLUSTER_TEST");
+
+        for (File testFile : testFiles) {
+            if (testFile.getName().contains("test")) {
+
+            }
+        }
+
         String executeCommand = userDir + file.getName().substring(0, file.getName().lastIndexOf('.'));
 
         execChannel.setCommand(compileCommand + " && " + executeCommand);
@@ -114,8 +128,9 @@ public class ClusterOperations {
         logFile.setCategory(FileCategory.valueOf("CLUSTER_LOG"));
         File savedLogFile = fileRepository.save(logFile);
         taskService.addFileToTask(task.getId(), savedLogFile.getId());
-
-        try (FileWriter writer = new FileWriter(fileStoragePath + logFileName)) {
+        Path userDirectory = Paths.get(fileStoragePath, "user_"+ username);
+        Files.createDirectories(userDirectory);
+        try (FileWriter writer = new FileWriter(userDirectory.toString() + '/' + logFileName)) {
             writer.write(executionLog.toString());
             if (!errorLog.isEmpty()) {
                 writer.write("Errors:\n");

@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import ru.gormikle.eduhub.dto.FileDto;
+import ru.gormikle.eduhub.entity.File;
 import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.service.FileService;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,9 +31,9 @@ public class FileController {
     private final FileService fileService;
 
     @GetMapping("/files/category/{categoryName}")
-    public ResponseEntity<Optional<FileDto>> getFilesByCategory(@PathVariable FileCategory categoryName) {
+    public ResponseEntity<List<File>> getFilesByCategory(@PathVariable FileCategory categoryName) {
         log.debug(categoryName.toString());
-        Optional<FileDto> files = fileService.getFilesByCategory(categoryName);
+        List<File> files = fileService.getFilesByCategory(categoryName);
         return ResponseEntity.ok(files);
     }
 

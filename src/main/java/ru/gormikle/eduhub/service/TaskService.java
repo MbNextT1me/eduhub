@@ -72,11 +72,11 @@ public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepo
         repository.delete(task);
     }
 
-    public List<FileDto> getFilesByCategory(String taskId, String category) {
+    public List<File> getFilesByCategory(String taskId, String category) {
         TaskDto taskDto = getTaskById(taskId);
         if (taskDto != null) {
             return taskDto.getFiles().stream()
-                    .flatMap(fileDto -> fileRepository.findAllDtoByCategory(FileCategory.valueOf(category)).stream())
+                    .flatMap(file -> fileRepository.findAllByCategory(FileCategory.valueOf(category)).stream())
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

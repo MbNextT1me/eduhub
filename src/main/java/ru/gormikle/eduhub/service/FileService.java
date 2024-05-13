@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -11,8 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.gormikle.eduhub.dto.FileDto;
 import ru.gormikle.eduhub.entity.File;
 import ru.gormikle.eduhub.entity.FileCategory;
+import ru.gormikle.eduhub.entity.User;
 import ru.gormikle.eduhub.mapper.FileMapper;
 import ru.gormikle.eduhub.repository.FileRepository;
+import ru.gormikle.eduhub.repository.UserRepository;
 import ru.gormikle.eduhub.service.basic.BaseMappedService;
 
 import java.io.IOException;
@@ -45,20 +48,25 @@ public class FileService extends BaseMappedService<File,FileDto,String,FileRepos
         if (fileName.contains("..")) {
             throw new IllegalArgumentException("File name contains invalid path sequence");
         }
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Path path = Paths.get(fileStoragePath + fileName);
-        Files.copy(file.getInputStream(), path);
+        Path userDirectory = Paths.get(fileStoragePath, "user_"+ username);
+        Files.createDirectories(userDirectory);
 
         File fileEntity = new File();
         fileEntity.setName(fileName);
         fileEntity.setCategory(category);
-        fileEntity.setCreatedBy(SecurityContextHolder.getContext().getAuthentication().getName());
-        repository.save(fileEntity);
+        fileEntity.setCreatedBy(username);
+        fileEntity = repository.save(fileEntity);
+
+        String newFileName = fileEntity.getId() + "_" + fileName;
+        Path filePath = userDirectory.resolve(newFileName);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public Optional<FileDto> getFilesByCategory(FileCategory category) {
 
-        return repository.findAllDtoByCategory(category);
+    public List<File> getFilesByCategory(FileCategory category) {
+        return repository.findAllByCategory(category);
     }
 
     public Resource downloadFile(String fileId) {
@@ -82,24 +90,20 @@ public class FileService extends BaseMappedService<File,FileDto,String,FileRepos
         existingFile.setCategory(category);
 
         if (file != null && !file.isEmpty()) {
-            // Если предоставлен новый файл, удаляем старый файл и сохраняем новый файл
             String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
             if (fileName.contains("..")) {
                 throw new IllegalArgumentException("File name contains invalid path sequence");
             }
 
-            // Удаляем существующий файл из хранилища
             Path existingFilePath = Paths.get(fileStoragePath + existingFile.getName());
             Files.deleteIfExists(existingFilePath);
 
-            // Сохраняем новый файл в хранилище
             Path filePath = Paths.get(fileStoragePath + fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             existingFile.setName(fileName);
         }
 
-        // Сохраняем обновленный файл в репозитории
         repository.save(existingFile);
     }
     public void deleteFile(String fileId) {

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.gormikle.eduhub.dto.FileDto;
 import ru.gormikle.eduhub.dto.TaskDto;
+import ru.gormikle.eduhub.entity.File;
 import ru.gormikle.eduhub.service.TaskService;
 
 import java.util.List;
@@ -49,15 +50,15 @@ public class TaskController{
         }
     }
 
-    @PostMapping("/tasks/files/")
+    @PostMapping("/tasks/files")
     public ResponseEntity<?> addFileToTask(@RequestParam("taskId") String taskId, @RequestParam("fileId") String fileId) {
         taskService.addFileToTask(taskId, fileId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/tasks/{taskId}/files/{category}")
-    public ResponseEntity<List<FileDto>> getFilesByCategory(@PathVariable String taskId, @PathVariable String category) {
-        List<FileDto> files = taskService.getFilesByCategory(taskId, category);
+    public ResponseEntity<List<File>> getFilesByCategory(@PathVariable String taskId, @PathVariable String category) {
+        List<File> files = taskService.getFilesByCategory(taskId, category);
         return ResponseEntity.ok(files);
     }
 
