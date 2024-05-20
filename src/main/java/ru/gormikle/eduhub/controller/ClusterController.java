@@ -1,14 +1,18 @@
 package ru.gormikle.eduhub.controller;
 
-
-import com.jcraft.jsch.JSchException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.gormikle.eduhub.dto.ClusterDto;
+import ru.gormikle.eduhub.entity.File;
+import ru.gormikle.eduhub.entity.FileCategory;
 import ru.gormikle.eduhub.service.ClusterService;
+import ru.gormikle.eduhub.service.FileService;
+import ru.gormikle.eduhub.service.TaskService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -17,8 +21,14 @@ import java.util.concurrent.CompletableFuture;
 public class ClusterController {
 
     private final ClusterService clusterService;
+    private final FileService fileService;
 
-    public ClusterController(ClusterService clusterService){this.clusterService = clusterService;}
+    private final TaskService taskService;
+    public ClusterController(ClusterService clusterService, FileService fileService, TaskService taskService) {
+        this.clusterService = clusterService;
+        this.fileService = fileService;
+        this.taskService = taskService;
+    }
 
     @GetMapping("/clusters")
     public ResponseEntity<List<ClusterDto>> getAllClusters() {
@@ -45,12 +55,15 @@ public class ClusterController {
     }
 
     @PostMapping("/clusters/remoteExecution")
-    public CompletableFuture<ResponseEntity<String>> remoteExecution(@RequestParam("fileId") String fileId,
-                                                                     @RequestParam("taskId") String taskId,
-                                                                     HttpServletRequest request){
-        return clusterService.executeRemoteCode(fileId, taskId, request)
-                .thenApply(ResponseEntity::ok)
-                .exceptionally(e -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage()));
+    public ResponseEntity<?> remoteExecution(@RequestParam("file") MultipartFile file,
+                                                  @RequestParam("taskId") String taskId,
+                                                  HttpServletRequest request) throws IOException {
+        File newFile = fileService.uploadFile(file, FileCategory.CLUSTER_SEND);
+        taskService.addFileToTask(taskId, newFile.getId());
+        CompletableFuture<String> executionResultFuture = clusterService.executeRemoteCode(newFile.getId(), taskId, request);
+        String result = executionResultFuture.join();
+        return ResponseEntity.ok().body(result);
     }
+
 
 }

@@ -33,7 +33,7 @@ public class FileController {
     @GetMapping("/files/category/{categoryName}")
     public ResponseEntity<List<File>> getFilesByCategory(@PathVariable FileCategory categoryName) {
         log.debug(categoryName.toString());
-        List<File> files = fileService.getFilesByCategory(categoryName);
+        List<File> files = fileService.findFilesByCategory(categoryName);
         return ResponseEntity.ok(files);
     }
 

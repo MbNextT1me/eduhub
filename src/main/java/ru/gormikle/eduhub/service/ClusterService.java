@@ -72,14 +72,20 @@ public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String
             String token = authHeader.replace(tokenPrefix, "");
             String username = jwtTokenUtils.getUsername(token);
 
+
             Session session = clusterOperations.connectToCluster(cluster);
+
             clusterOperations.sendFileToCluster(session, file, taskId, username);
-            clusterOperations.compileAndExecuteFile(session, file, task, username);
+            clusterOperations.compileAndExecuteFile(session,file,taskId,username);
+//            clusterOperations.compileFile(session,file,taskId,username);
+//            clusterOperations.executeFile(session,file,taskId,username);
+
             session.disconnect();
+
             return CompletableFuture.completedFuture("Success. Execution log saved.");
         } catch (JSchException e) {
             return CompletableFuture.completedFuture("Error: " + e.getMessage());
-        } catch (SftpException | IOException e) {
+        } catch (SftpException | IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

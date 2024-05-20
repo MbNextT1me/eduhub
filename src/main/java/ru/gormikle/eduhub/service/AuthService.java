@@ -14,6 +14,7 @@ import ru.gormikle.eduhub.dto.JwtRequest;
 import ru.gormikle.eduhub.dto.JwtResponse;
 import ru.gormikle.eduhub.dto.RegistrationUser;
 import ru.gormikle.eduhub.dto.UserDto;
+import ru.gormikle.eduhub.entity.Role;
 import ru.gormikle.eduhub.entity.User;
 import ru.gormikle.eduhub.exception.AppError;
 import ru.gormikle.eduhub.utils.JwtTokenUtils;
@@ -38,6 +39,15 @@ public class AuthService {
 
         String token = jwtTokenUtils.generateToken(userDetails);
         return ResponseEntity.ok(new JwtResponse(token));
+    }
+
+    public List<UserDto> getAllByRole(Role role) {
+        List<User> users = userService.getAllByRole(role);
+        List<UserDto> userDtos = new ArrayList<>();
+        for (User user : users) {
+            userDtos.add(new UserDto(user.getId(),user.getName(), user.getSurname(), user.getEmail(), user.getRole()));
+        }
+        return userDtos;
     }
 
     @Transactional

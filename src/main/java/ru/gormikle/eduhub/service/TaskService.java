@@ -19,10 +19,13 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepository, TaskMapper> {
+
+    private final FileService fileService;
     private final FileRepository fileRepository;
 
-    public TaskService(TaskRepository repository, TaskMapper mapper, FileRepository fileRepository) {
+    public TaskService(TaskRepository repository, TaskMapper mapper, FileService fileService,FileRepository fileRepository) {
         super(repository,mapper);
+        this.fileService = fileService;
         this.fileRepository = fileRepository;
     }
 
@@ -44,6 +47,7 @@ public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepo
         return update(taskDto);
     }
 
+    @Transactional
     public void addFileToTask(String taskId, String fileId) {
         Task task = repository.findById(taskId).orElse(null);
         if (task != null) {
@@ -59,6 +63,23 @@ public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepo
         }
     }
 
+    public List<File> findTaskFilesByCategory (String taskId,FileCategory category){
+        Task task = repository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+        return task.getFiles().stream()
+                .filter(file -> file.getCategory().equals(category))
+                .collect(Collectors.toList());
+    }
+
+    public List<File> findTaskFilesByCreatedBy(String taskId,String username){
+        Task task = repository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+
+        return task.getFiles().stream()
+                .filter(file -> file.getCreatedBy().equals(username))
+                .collect(Collectors.toList());
+    }
+
     public void deleteTask(String id) {
         Task task = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
@@ -67,19 +88,21 @@ public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepo
 
         for (File file : files) {
             fileRepository.deleteFileFromTask(id, file.getId());
+            fileRepository.delete(file);
         }
 
         repository.delete(task);
     }
 
-    public List<File> getFilesByCategory(String taskId, String category) {
-        TaskDto taskDto = getTaskById(taskId);
-        if (taskDto != null) {
-            return taskDto.getFiles().stream()
-                    .flatMap(file -> fileRepository.findAllByCategory(FileCategory.valueOf(category)).stream())
-                    .collect(Collectors.toList());
-        }
-        return Collections.emptyList();
-    }
+    public void deleteFileFromTask(String taskId, String fileId){
+        Task task = repository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("File not found with id: " + fileId));
 
+        task.getFiles().remove(file);
+        repository.save(task);
+
+        fileService.deleteFile(fileId);
+    }
 }

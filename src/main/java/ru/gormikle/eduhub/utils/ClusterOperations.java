@@ -4,34 +4,37 @@ import com.jcraft.jsch.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.gormikle.eduhub.dto.FileDto;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import ru.gormikle.eduhub.entity.Cluster;
 import ru.gormikle.eduhub.entity.File;
 import ru.gormikle.eduhub.entity.FileCategory;
-import ru.gormikle.eduhub.entity.Task;
 import ru.gormikle.eduhub.repository.FileRepository;
+import ru.gormikle.eduhub.service.FileService;
 import ru.gormikle.eduhub.service.TaskService;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.UUID;
 
 @Component
-@Slf4j
 public class ClusterOperations {
     @Value("${file.path}")
     private String fileStoragePath;
 
     private final TaskService taskService;
     private final FileRepository fileRepository;
+    private final FileService fileService;
 
-    public ClusterOperations(TaskService taskService, FileRepository fileRepository) {
+    public ClusterOperations(TaskService taskService, FileRepository fileRepository, FileService fileService) {
         this.taskService = taskService;
         this.fileRepository = fileRepository;
+        this.fileService = fileService;
     }
 
     public Session connectToCluster(Cluster cluster) throws JSchException {
@@ -44,6 +47,7 @@ public class ClusterOperations {
         session.connect();
         return session;
     }
+
 
     public void sendFileToCluster(Session session, File file, String taskId,String username) throws JSchException, IOException, SftpException {
         ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
@@ -72,73 +76,90 @@ public class ClusterOperations {
             sftpChannel.cd(userDir);
         }
 
-        FileInputStream fileInputStream = new FileInputStream(fileStoragePath +"user_" + username + "/" +file.getId() + '_' + file.getName());
+        FileInputStream fileInputStream = new FileInputStream(fileStoragePath +"user_" + file.getCreatedBy() + "/" +file.getId() + '_' + file.getName());
 
         sftpChannel.put(fileInputStream, file.getName());
 
         fileInputStream.close();
         sftpChannel.disconnect();
     }
-
-
-
-    public void compileAndExecuteFile(Session session, File file, Task task, String username) throws JSchException, IOException {
-        String userDir = "./eduhub/task_" + task.getId() + "/user_" + username +"/";
+    public void compileAndExecuteFile(Session session, File file, String taskId, String username) throws JSchException, IOException, InterruptedException, SftpException {
+        String userDir = "./eduhub/task_" + taskId + "/user_" + username + "/";
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         ChannelExec execChannel = (ChannelExec) session.openChannel("exec");
         String compileCommand = "/usr/local/cuda/bin/nvcc " + userDir + file.getName() + " -o " + userDir + file.getName().substring(0, file.getName().lastIndexOf('.'));
-
-        List<File> testFiles = taskService.getFilesByCategory(task.getId(),"CLUSTER_TEST");
-
-        for (File testFile : testFiles) {
-            if (testFile.getName().contains("test")) {
-
-            }
-        }
-
-        String executeCommand = userDir + file.getName().substring(0, file.getName().lastIndexOf('.'));
-
-        execChannel.setCommand(compileCommand + " && " + executeCommand);
+        execChannel.setCommand(compileCommand);
+        execChannel.setOutputStream(outputStream);
+        execChannel.setErrStream(outputStream);
         execChannel.connect();
 
-        InputStream inputStream = execChannel.getInputStream();
-        InputStream errorStream = execChannel.getErrStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        BufferedReader errorReader = new BufferedReader(new InputStreamReader(errorStream));
-
-        StringBuilder executionLog = new StringBuilder();
-        StringBuilder errorLog = new StringBuilder();
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-            executionLog.append(line).append("\n");
+        while (!execChannel.isClosed()) {
+            Thread.sleep(100);
         }
-
-        while ((line = errorReader.readLine()) != null) {
-            errorLog.append(line).append("\n");
-        }
-
-        int exitStatus = execChannel.getExitStatus();
         execChannel.disconnect();
 
-        String logFileName = "compilation_log_" + file.getName().substring(0, file.getName().lastIndexOf('.')) + ".txt";
+        String executable = file.getName().substring(0, file.getName().lastIndexOf('.'));
+        List<File> testFiles = taskService.findTaskFilesByCategory(taskId, FileCategory.CLUSTER_TEST);
+        for (File testFile : testFiles) {
+            if (testFile.getName().contains("test")) {
+                sendFileToCluster(session, testFile, taskId, username);
 
+                execChannel = (ChannelExec) session.openChannel("exec");
+                String inputFilePath = userDir + testFile.getName();
+                String outputFilePath = userDir + "res.txt";
+                String command = "cd " + userDir + " && ./" + executable + " " + inputFilePath + " " + outputFilePath;
+
+                execChannel.setCommand(command);
+                execChannel.setOutputStream(outputStream);
+                execChannel.setErrStream(outputStream);
+                execChannel.connect();
+
+                while (!execChannel.isClosed()) {
+                    Thread.sleep(100);
+                }
+                execChannel.disconnect();
+
+                ChannelSftp sftpChannel = (ChannelSftp) session.openChannel("sftp");
+                sftpChannel.connect();
+                String localResFilePath = fileStoragePath + "user_" + username + "/res.txt";
+                sftpChannel.get(outputFilePath, localResFilePath);
+                sftpChannel.disconnect();
+
+                for (File resTestFile : testFiles) {
+                    if (resTestFile.getName().contains("res")) {
+                        boolean comparisonResult = compareFirst10Values(localResFilePath, fileStoragePath + "user_" + resTestFile.getCreatedBy() + "/" + resTestFile.getId() + "_" + resTestFile.getName());
+                        outputStream.write(("Comparison result: " + comparisonResult + "\n").getBytes());
+                        break;
+                    }
+                }
+            }
+        }
+
+        String logFileName = file.getName().substring(0, file.getName().lastIndexOf('.')) + ".txt";
         File logFile = new File();
         logFile.setName(logFileName);
-        logFile.setCategory(FileCategory.valueOf("CLUSTER_LOG"));
-        File savedLogFile = fileRepository.save(logFile);
-        taskService.addFileToTask(task.getId(), savedLogFile.getId());
-        Path userDirectory = Paths.get(fileStoragePath, "user_"+ username);
-        Files.createDirectories(userDirectory);
-        try (FileWriter writer = new FileWriter(userDirectory.toString() + '/' + logFileName)) {
-            writer.write(executionLog.toString());
-            if (!errorLog.isEmpty()) {
-                writer.write("Errors:\n");
-                writer.write(errorLog.toString());
-            }
-        } catch (IOException e) {
-            log.error("Error writing execution log: {}", e.getMessage());
-        }
+        logFile.setCategory(FileCategory.CLUSTER_LOG);
+        logFile.setCreatedBy(username);
+        fileRepository.save(logFile);
+
+        Path logFilePath = Paths.get(fileStoragePath, "user_" + username, logFile.getId() + "_" + logFileName);
+        Files.write(logFilePath, outputStream.toByteArray());
+        taskService.addFileToTask(taskId, logFile.getId());
     }
 
+    private boolean compareFirst10Values(String localResFilePath, String testFilePath) throws IOException {
+        try (BufferedReader resReader = new BufferedReader(new FileReader(localResFilePath));
+             BufferedReader testReader = new BufferedReader(new FileReader(testFilePath))) {
+
+            for (int i = 0; i < 10; i++) {
+                String resLine = resReader.readLine();
+                String testLine = testReader.readLine();
+                if (resLine == null || !resLine.equals(testLine)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }

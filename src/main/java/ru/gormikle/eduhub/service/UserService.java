@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.gormikle.eduhub.dto.RegistrationUser;
+import ru.gormikle.eduhub.entity.Role;
 import ru.gormikle.eduhub.entity.User;
 import ru.gormikle.eduhub.repository.UserRepository;
 
@@ -29,6 +30,8 @@ public class UserService implements UserDetailsService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    public List<User> getAllByRole(Role role){return userRepository.findAllByRole(role);}
 
     @Transactional
     @Override

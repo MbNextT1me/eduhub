@@ -35,11 +35,17 @@ public class FileService extends BaseMappedService<File,FileDto,String,FileRepos
     @Value("${file.path}")
     private String fileStoragePath;
 
+
     public FileService(FileRepository repository, FileMapper mapper) {
         super(repository,mapper);
     }
 
-    public void uploadFile(MultipartFile file, FileCategory category) throws IOException {
+    public List<File> findFilesByCategory(FileCategory category) {
+        return repository.findAllByCategory(category);
+    }
+
+
+    public File uploadFile(MultipartFile file, FileCategory category) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File is empty");
         }
@@ -62,16 +68,12 @@ public class FileService extends BaseMappedService<File,FileDto,String,FileRepos
         String newFileName = fileEntity.getId() + "_" + fileName;
         Path filePath = userDirectory.resolve(newFileName);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-
-    public List<File> getFilesByCategory(FileCategory category) {
-        return repository.findAllByCategory(category);
+        return fileEntity;
     }
 
     public Resource downloadFile(String fileId) {
         File file = repository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("File not found"));
-        Path filePath = Paths.get(fileStoragePath + file.getName());
+        Path filePath = Paths.get(fileStoragePath, "user_" + file.getCreatedBy(), file.getId() + "_" + file.getName());
         try {
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists() || resource.isReadable()) {
@@ -109,6 +111,12 @@ public class FileService extends BaseMappedService<File,FileDto,String,FileRepos
     public void deleteFile(String fileId) {
         File existingFile = repository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("File not found"));
+        Path filePath = Paths.get(fileStoragePath, "user_" + existingFile.getCreatedBy(), existingFile.getId() + "_" + existingFile.getName());
+        try {
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete file from storage", e);
+        }
         repository.delete(existingFile);
     }
 }

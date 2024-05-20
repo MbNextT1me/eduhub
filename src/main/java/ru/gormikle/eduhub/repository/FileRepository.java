@@ -13,8 +13,10 @@ import java.util.Optional;
 
 
 public interface FileRepository extends JpaRepository<File, String> {
-    @Query("SELECT f FROM File f WHERE f.category = :category")
-    List<File> findAllByCategory(@Param("category") FileCategory category);
+
+    List<File> findAllByCategory(FileCategory category);
+
+    List<File> findAllByCreatedBy(String username);
 
     @Modifying
     @Query(value = "DELETE FROM task_files WHERE task_id = CAST(:taskId AS UUID) AND file_id = CAST(:fileId AS UUID)", nativeQuery = true)

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.gormikle.eduhub.dto.JwtRequest;
 import ru.gormikle.eduhub.dto.RegistrationUser;
 import ru.gormikle.eduhub.dto.UserDto;
+import ru.gormikle.eduhub.entity.Role;
 import ru.gormikle.eduhub.service.AuthService;
 
 import java.util.List;
@@ -21,6 +22,12 @@ public class TestAuthController {
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers(){
         List<UserDto> users = authService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/{role}")
+    public ResponseEntity<?> getAllStudents(@PathVariable Role role){
+        List<UserDto> users = authService.getAllByRole(role);
         return ResponseEntity.ok(users);
     }
 
