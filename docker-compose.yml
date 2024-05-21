@@ -50,13 +50,14 @@ services:
 
   frontend:
     build:
-      context: ../eduhub-vite-frontend
+      context: .
       dockerfile: Dockerfile
     container_name: eduhub_frontend
     environment:
-      - VITE_API_URL=https://localhost:8080/eduhub/api
+      - VITE_API_URL=https://158.160.115.101/eduhub/api
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
     depends_on:
       - app
 
