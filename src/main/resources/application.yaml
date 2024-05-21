@@ -18,7 +18,7 @@ spring:
   application:
     name: eduhub
   datasource:
-    url: jdbc:postgresql://localhost:5432/eduhub_db?useSSL=false
+    url: jdbc:postgresql://db:5432/eduhub_db?useSSL=false
     username: bestuser
     password: admin
   jpa:
