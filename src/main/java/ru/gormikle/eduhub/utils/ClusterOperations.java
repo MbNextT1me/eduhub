@@ -126,6 +126,17 @@ public class ClusterOperations {
                 sftpChannel.get(outputFilePath, localResFilePath);
                 sftpChannel.disconnect();
 
+                File resultFile = new File();
+                resultFile.setName("res.txt");
+                resultFile.setCategory(FileCategory.CLUSTER_LOG);
+                resultFile.setCreatedBy(username);
+                fileRepository.save(resultFile);
+
+                Path resultFilePath = Paths.get(fileStoragePath, "user_" + username, resultFile.getId() + "_res.txt");
+                Files.copy(Paths.get(localResFilePath), resultFilePath);
+
+                taskService.addFileToTask(taskId, resultFile.getId());
+
                 for (File resTestFile : testFiles) {
                     if (resTestFile.getName().contains("res")) {
                         boolean comparisonResult = compareFirst10Values(localResFilePath, fileStoragePath + "user_" + resTestFile.getCreatedBy() + "/" + resTestFile.getId() + "_" + resTestFile.getName());

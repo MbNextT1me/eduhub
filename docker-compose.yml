@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: eduhub_db
+    restart: always
+    environment:
+      POSTGRES_DB: eduhub_db
+      POSTGRES_USER: bestuser
+      POSTGRES_PASSWORD: admin
+      STOP_ON_MIGRATION_FAILURE: "false"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    image: eduhub:latest
+    container_name: eduhub_app
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/eduhub_db?useSSL=false
+      SPRING_DATASOURCE_USERNAME: bestuser
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration/
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRING_FLYWAY_OUT_OF_ORDER: "false"
+      SPRING_FLYWAY_SCHEMAS: eduhub
+      JWT_PREFIX: "Bearer "
+      JWT_SECRET: test
+      JWT_LIFETIME: 10h
+      SPRING_APPLICATION_NAME: eduhub
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 10MB
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 10MB
+      SERVER_PORT: 8080
+      SERVER_SERVLET_CONTEXT_PATH: /eduhub
+      SPRING_MAIN_BANNER_MODE: 'off'
+      FILE_PATH: src/main/resources/cluster/files/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ../eduhub-vite-frontend
+      dockerfile: Dockerfile
+    container_name: eduhub_frontend
+    environment:
+      - VITE_API_URL=http://localhost:8080/eduhub/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - app
+
+volumes:
+  db-data:
+    external: false
