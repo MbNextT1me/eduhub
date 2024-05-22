@@ -6,7 +6,7 @@ server:
     enabled: true
     key-store-type: PKCS12
     key-store: classpath:ssl/eduhub_ssl.pfx
-    key-store-password: adminadmin
+    key-store-password: admin
 jwt:
   prefix: "Bearer "
   secret: test
