@@ -108,7 +108,7 @@ public class ClusterOperations {
                 execChannel = (ChannelExec) session.openChannel("exec");
                 String inputFilePath = userDir + testFile.getName();
                 String outputFilePath = userDir + "res.txt";
-                String command = "cd " + userDir + " && ./" + executable + " " + inputFilePath + " " + outputFilePath;
+                String command = "cd " + userDir + " && sudo ./" + executable + " " + inputFilePath + " " + outputFilePath;
 
                 execChannel.setCommand(command);
                 execChannel.setOutputStream(outputStream);
