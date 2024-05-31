@@ -31,4 +31,7 @@ public class Cluster extends BaseEntity {
 
     @Column(name = "hostUserPassword", nullable = false)
     private String hostUserPassword;
+
+    @Column(name = "isUsedAsActive", nullable = false)
+    private boolean isUsedAsActive;
 }

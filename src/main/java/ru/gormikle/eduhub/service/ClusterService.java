@@ -21,26 +21,29 @@ import ru.gormikle.eduhub.utils.JwtTokenUtils;
 
 import java.io.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Service
 @Transactional
 @Slf4j
-public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String,ClusterRepository, ClusterMapper> {
+public class ClusterService extends BaseMappedService<Cluster, ClusterDto, String, ClusterRepository, ClusterMapper> {
     @Value("${jwt.prefix}")
     private String tokenPrefix;
 
-    public ClusterService(ClusterRepository repository, ClusterMapper mapper, JwtTokenUtils jwtTokenUtils, FileRepository fileRepository, TaskRepository taskRepository, ClusterOperations clusterOperations){
-        super(repository,mapper);
+    public ClusterService(ClusterRepository repository, ClusterMapper mapper, JwtTokenUtils jwtTokenUtils, FileRepository fileRepository, TaskRepository taskRepository, ClusterOperations clusterOperations) {
+        super(repository, mapper);
         this.jwtTokenUtils = jwtTokenUtils;
         this.fileRepository = fileRepository;
         this.taskRepository = taskRepository;
         this.clusterOperations = clusterOperations;
     }
+
     private final JwtTokenUtils jwtTokenUtils;
     private final ClusterOperations clusterOperations;
     private final FileRepository fileRepository;
     private final TaskRepository taskRepository;
+
     public List<ClusterDto> getAllClusters() {
         return getAllAsDto();
     }
@@ -52,8 +55,25 @@ public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String
     }
 
     public ClusterDto saveCluster(ClusterDto clusterDto) {
+        if (clusterDto.isUsedAsActive() && repository.existsByIsUsedAsActive(true)) {
+            throw new IllegalArgumentException("There is already an active cluster.");
+        }
         return create(clusterDto);
     }
+
+    public ClusterDto updateCluster(ClusterDto clusterDto) {
+        if (clusterDto.isUsedAsActive() && repository.existsByIsUsedAsActive(true)) {
+            Optional<Cluster> currentActiveClusterOpt = repository.findByIsUsedAsActive(true);
+            if (currentActiveClusterOpt.isPresent()) {
+                Cluster currentActiveCluster = currentActiveClusterOpt.get();
+                if (!currentActiveCluster.getId().equals(clusterDto.getId())) {
+                    throw new IllegalArgumentException("There is already an active cluster.");
+                }
+            }
+        }
+        return update(clusterDto);
+    }
+
 
     public void deleteCluster(String id) {
         repository.deleteById(id);
@@ -66,19 +86,17 @@ public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String
                     .orElseThrow(() -> new IllegalArgumentException("File not found with id: " + fileId));
             Task task = taskRepository.findById(taskId)
                     .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
-            Cluster cluster = repository.findAll().get(0);
+            Cluster cluster = repository.findByIsUsedAsActive(true)
+                    .orElseThrow(() -> new IllegalArgumentException("No active cluster found."));
 
             String authHeader = request.getHeader("Authorization");
             String token = authHeader.replace(tokenPrefix, "");
             String username = jwtTokenUtils.getUsername(token);
 
-
             Session session = clusterOperations.connectToCluster(cluster);
 
             clusterOperations.sendFileToCluster(session, file, taskId, username);
-            clusterOperations.compileAndExecuteFile(session,file,taskId,username);
-//            clusterOperations.compileFile(session,file,taskId,username);
-//            clusterOperations.executeFile(session,file,taskId,username);
+            clusterOperations.compileAndExecuteFile(session, file, taskId, username);
 
             session.disconnect();
 
@@ -90,3 +108,4 @@ public class ClusterService extends BaseMappedService<Cluster, ClusterDto,String
         }
     }
 }
+

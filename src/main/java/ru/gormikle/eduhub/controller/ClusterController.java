@@ -54,6 +54,13 @@ public class ClusterController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/clusters/{id}")
+    public ResponseEntity<ClusterDto> updateCluster(@PathVariable String id, @RequestBody ClusterDto clusterDto) {
+        clusterDto.setId(id);
+        ClusterDto updatedCluster = clusterService.updateCluster(clusterDto);
+        return ResponseEntity.ok(updatedCluster);
+    }
+
     @PostMapping("/clusters/remoteExecution")
     public ResponseEntity<?> remoteExecution(@RequestParam("file") MultipartFile file,
                                                   @RequestParam("taskId") String taskId,

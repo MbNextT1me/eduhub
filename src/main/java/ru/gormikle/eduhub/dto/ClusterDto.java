@@ -20,4 +20,6 @@ public class ClusterDto extends BaseDto {
     private String hostUserName;
 
     private String hostUserPassword;
+
+    private boolean isUsedAsActive;
 }
