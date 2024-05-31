@@ -87,12 +87,14 @@ public class TaskService extends BaseMappedService<Task, TaskDto,String,TaskRepo
         List<File> files = task.getFiles();
 
         for (File file : files) {
-            fileRepository.deleteFileFromTask(id, file.getId());
-            fileRepository.delete(file);
+            fileService.deleteFile(file.getId());
         }
+        task.setFiles(Collections.emptyList());
+        repository.save(task);
 
         repository.delete(task);
     }
+
 
     public void deleteFileFromTask(String taskId, String fileId){
         Task task = repository.findById(taskId)
