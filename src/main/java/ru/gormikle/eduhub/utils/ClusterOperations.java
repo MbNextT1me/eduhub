@@ -160,27 +160,45 @@ public class ClusterOperations {
     }
 
     private boolean compareFirst10Values(String localResFilePath, String testFilePath) throws IOException {
+        Path logFilePath = Paths.get(fileStoragePath, "comparison_log.txt");
         try (BufferedReader resReader = new BufferedReader(new FileReader(localResFilePath));
-             BufferedReader testReader = new BufferedReader(new FileReader(testFilePath))) {
+             BufferedReader testReader = new BufferedReader(new FileReader(testFilePath));
+             BufferedWriter logWriter = Files.newBufferedWriter(logFilePath, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+
+            logWriter.write("Comparing files:\n");
+            logWriter.write("Local file: " + localResFilePath + "\n");
+            logWriter.write("Test file: " + testFilePath + "\n\n");
 
             for (int i = 0; i < 10; i++) {
                 String resLine = resReader.readLine();
                 String testLine = testReader.readLine();
 
                 if (resLine == null || testLine == null) {
+                    logWriter.write("Comparison failed: one of the lines is null\n");
                     return false;
                 }
 
                 String[] resValues = resLine.trim().split("\\s+");
                 String[] testValues = testLine.trim().split("\\s+");
 
+                logWriter.write("Comparing line " + (i + 1) + ":\n");
+                logWriter.write("Local values: " + String.join(" ", resValues) + "\n");
+                logWriter.write("Test values: " + String.join(" ", testValues) + "\n");
+
                 for (int j = 0; j < 10; j++) {
                     if (resValues.length <= j || testValues.length <= j || !resValues[j].equals(testValues[j])) {
+                        logWriter.write("Comparison failed: values differ at index " + j + "\n\n");
                         return false;
                     }
                 }
+
+                logWriter.write("Line " + (i + 1) + " comparison successful\n\n");
             }
+
+            logWriter.write("Comparison result: true\n\n");
         }
+
         return true;
     }
+
 }
