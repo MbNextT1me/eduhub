@@ -140,7 +140,7 @@ public class ClusterOperations {
                 for (File resTestFile : testFiles) {
                     if (resTestFile.getName().contains("res")) {
                         boolean comparisonResult = compareFirst10Values(localResFilePath, fileStoragePath + "user_" + resTestFile.getCreatedBy() + "/" + resTestFile.getId() + "_" + resTestFile.getName());
-                        outputStream.write(("Comparison result: " + comparisonResult + "\n").getBytes());
+                        outputStream.write(("\nComparison result: " + comparisonResult + "\n").getBytes());
                         break;
                     }
                 }
@@ -166,8 +166,18 @@ public class ClusterOperations {
             for (int i = 0; i < 10; i++) {
                 String resLine = resReader.readLine();
                 String testLine = testReader.readLine();
-                if (resLine == null || !resLine.equals(testLine)) {
+
+                if (resLine == null || testLine == null) {
                     return false;
+                }
+
+                String[] resValues = resLine.trim().split("\\s+");
+                String[] testValues = testLine.trim().split("\\s+");
+
+                for (int j = 0; j < 10; j++) {
+                    if (resValues.length <= j || testValues.length <= j || !resValues[j].equals(testValues[j])) {
+                        return false;
+                    }
                 }
             }
         }
