@@ -48,9 +48,10 @@ CREATE TABLE IF NOT EXISTS clusters (
     host_name VARCHAR(255) NOT NULL,
     port VARCHAR(10) NOT NULL,
     host_user_name VARCHAR(255) NOT NULL,
-    host_user_password VARCHAR(255) NOT NULL,
-    is_used_as_active BOOLEAN NOT NULL DEFAULT FALSE
+    host_user_password VARCHAR(255) NOT NULL
 );
+
+ALTER TABLE clusters ADD COLUMN IF NOT EXISTS is_used_as_active BOOLEAN NOT NULL DEFAULT FALSE;
 
 INSERT INTO clusters(id, name, host_name, port, host_user_name, host_user_password, is_used_as_active)
 VALUES (gen_random_uuid()::text, 'main', '194.176.114.13', '22', 'michaelg', 'Laba403', TRUE);
