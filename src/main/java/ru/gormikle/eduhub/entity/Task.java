@@ -33,6 +33,7 @@ public class Task extends BaseEntity {
     private String description;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
+
     @JoinTable(
             name = "task_files",
             joinColumns = @JoinColumn(name = "task_id"),
